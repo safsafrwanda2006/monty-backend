@@ -5,7 +5,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import productRoutes from "./routes/productRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
-import pool from "./config/db.js";
+import pool from "./config/db.js
+import path from "path";
 
 dotenv.config();
 
