@@ -19,6 +19,7 @@ app.use(morgan("dev"));
 
 app.use("/api/products", productRoutes);
 app.use("/api/admin/", adminRoutes);
+app.use("/uploads",express.static("uploads"));
 
 async function initDB() {
   try {
