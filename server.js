@@ -19,8 +19,10 @@ app.use(morgan("dev"));
 
 app.use("/api/products", productRoutes);
 app.use("/api/admin/", adminRoutes);
-app.use("/uploads",express.static("uploads"));
-
+app.use(
+  "/uploads",
+  express.static(path.join(process.cwd(), "uploads"))
+);
 async function initDB() {
   try {
     await pool.query(`
