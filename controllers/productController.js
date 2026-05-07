@@ -26,7 +26,8 @@ export const getProduct = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    const { name, image, price ,type,instouck,classification,description} = req.body;
+    const { name, price ,type,instouck,classification,description} = req.body;
+    const  image = req.file.path;
     const result = await pool.query(
       `INSERT INTO products(name,image,price,type,instouck,classification,description) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
       [name, image, price,type,instouck,classification,description],
