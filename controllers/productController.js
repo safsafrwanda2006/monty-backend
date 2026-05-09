@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import supabase from "../config/supabase.js";
 
 export const getProducts = async (req, res) => {
   try {
@@ -26,16 +27,40 @@ export const getProduct = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    const { name, price ,type,instouck,classification,description} = req.body;
-    const  image = req.file.path;
+    const { name, price, type, instouck, classification, description } =
+      req.body;
+    const file = req.file;
+    if (!file) {
+      return res.status(404).json({ message: "image is required" });
+    }
+    const fileExt = file.originalname.split(".").pop();
+
+    const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}.${fileExt}`;
+
+    // Upload to supabase Storage
+    const {error}= await supabase.storage
+       .from("products")
+       .upload(fileName,file.buffer,{
+        contentType: file.mimetype,
+       });
+
+       if(error){
+        return res.status(500).json({
+          message: "storing the image error"
+        })
+       }
+    
+    const image = `${process.env.SUPABASE_PROJECT_URL}/storage/v1/object/public/products/${fileName}`;
+
+
     const result = await pool.query(
       `INSERT INTO products(name,image,price,type,instouck,classification,description) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [name, image, price,type,instouck,classification,description],
+      [name, image, price, type, instouck, classification, description],
     );
     res.json(result.rows);
   } catch (err) {
     console.log("Error in creating product", err);
-    res.status(500).json({message: "Creating product error"})
+    res.status(500).json({ message: "Creating product error" });
   }
 };
 
@@ -93,17 +118,18 @@ export const updateProductDescription = async (req, res) => {
   }
 };
 
-export const updateProductType = async(req,res)=>{
+export const updateProductType = async (req, res) => {
   try {
-    const {id}= req.params;
-    const {type}= req.body;
-    const result = await pool.query('UPDATE products SET type = $1 WHERE id = $2',
-      [type,id]
-    )
+    const { id } = req.params;
+    const { type } = req.body;
+    const result = await pool.query(
+      "UPDATE products SET type = $1 WHERE id = $2",
+      [type, id],
+    );
   } catch (err) {
-    console.log("error in updating the type : ", err)
+    console.log("error in updating the type : ", err);
   }
-}
+};
 
 export const deleteProduct = async (req, res) => {
   try {
