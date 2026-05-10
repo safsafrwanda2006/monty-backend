@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import supabase from "../config/supabase.js";
+import sharp from "sharp";
 
 export const getProducts = async (req, res) => {
   try {
@@ -37,11 +38,17 @@ export const createProduct = async (req, res) => {
 
     const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}.${fileExt}`;
 
+    const compressedImage = await sharp(file.buffer)
+      .resize({width: 800,withoutEnlargement: true})
+      .jpeg({quality: 70})
+      .toBuffer();
+
     // Upload to supabase Storage
     const {error}= await supabase.storage
        .from("products")
-       .upload(fileName,file.buffer,{
+       .upload(fileName,compressedImage,{
         contentType: file.mimetype,
+        cacheControl: "31536000",
        });
 
        if(error){
