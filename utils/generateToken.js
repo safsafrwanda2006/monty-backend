@@ -3,10 +3,14 @@ import dotenv from "dotenv"
 
 dotenv.config();
 
-export const generateToken = (userId)=>{
-    const payload = {id: userId};
+export const generateToken = (admin)=>{
+    const payload = {
+        id: admin.admin_id,
+        role: admin.admin_role,
+        email: admin.email
+    };
     const token = jwt.sign(payload,process.env.JWT_SECRET,{
-        expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+        expiresIn: process.env.JWT_EXPIRES_IN || "30d",
     });
     return token;
 } 
