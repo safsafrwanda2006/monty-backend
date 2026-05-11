@@ -25,7 +25,7 @@ export const createAdmin = async (req, res) => {
 
     const newAdmin = result.rows[0];
 
-    const token = generateToken(newAdmin.id);
+    const token = generateToken(newAdmin.admin_id);
 
     res.json({
       status: "success",
