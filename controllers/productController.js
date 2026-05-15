@@ -71,6 +71,126 @@ export const createProduct = async (req, res) => {
   }
 };
 
+
+export const updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      name,
+      price,
+      type,
+      instouck,
+      classification,
+      description,
+    } = req.body;
+
+    // Get old product
+    const oldProduct = await pool.query(
+      "SELECT * FROM products WHERE id = $1",
+      [id]
+    );
+
+    if (oldProduct.rows.length === 0) {
+      return res.status(404).json({
+        message: "Product not found",
+      });
+    }
+
+    let image = oldProduct.rows[0].image;
+
+    // If new image uploaded
+    if (req.file) {
+      const file = req.file;
+
+      const fileExt = file.originalname.split(".").pop();
+
+      const fileName = `${Date.now()}-${Math.round(
+        Math.random() * 1e9
+      )}.${fileExt}`;
+
+      // Compress image
+      const compressedImage = await sharp(file.buffer)
+        .resize({
+          width: 800,
+          withoutEnlargement: true,
+        })
+        .jpeg({
+          quality: 70,
+        })
+        .toBuffer();
+
+      // Upload new image
+      const { error } = await supabase.storage
+        .from("products")
+        .upload(fileName, compressedImage, {
+          contentType: "image/jpeg",
+          cacheControl: "31536000",
+        });
+
+      if (error) {
+        return res.status(500).json({
+          message: "Error uploading image",
+        });
+      }
+
+      // Generate new image URL
+      image = `${process.env.SUPABASE_PROJECT_URL}/storage/v1/object/public/products/${fileName}`;
+
+      // Delete old image from storage
+      try {
+        const oldImage = oldProduct.rows[0].image;
+
+        if (oldImage) {
+          const oldFileName = oldImage.split("/products/")[1];
+
+          await supabase.storage
+            .from("products")
+            .remove([oldFileName]);
+        }
+      } catch (deleteError) {
+        console.log("Old image delete error", deleteError);
+      }
+    }
+
+    // Update product
+    const result = await pool.query(
+      `
+      UPDATE products
+      SET
+        name = $1,
+        image = $2,
+        price = $3,
+        type = $4,
+        instouck = $5,
+        classification = $6,
+        description = $7
+      WHERE id = $8
+      RETURNING *
+      `,
+      [
+        name,
+        image,
+        price,
+        type,
+        instouck,
+        classification,
+        description,
+        id,
+      ]
+    );
+
+    res.json(result.rows[0]);
+
+  } catch (err) {
+    console.log("Error updating product", err);
+
+    res.status(500).json({
+      message: "Updating product error",
+    });
+  }
+};
+
 export const updateProductPrice = async (req, res) => {
   try {
     const { id } = req.params;
